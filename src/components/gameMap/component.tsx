@@ -1,20 +1,23 @@
 // File: src/components/gameMap/component.tsx
 'use client';
 
-import { useRef } from 'react';
+import { useEffect } from 'react';
 import { Paper, Typography, CircularProgress, Alert } from '@mui/material';
-import { Game } from '@/lib/game';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
+import { useGameStore } from '@/stores/gameStore';
+import { initGame } from '@/lib/game';
 import { GameMapContainer } from '.';
 
 export const GameMap = () => {
-  const gameRef = useRef<Game | null>(null);
-  const mapInitialized = useRef(false);
-
-  // Get API key from environment variable
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const { isLoaded, error } = useGoogleMaps({ apiKey: apiKey! });
+  const { selectedCarIds } = useGameStore();
 
-  // Show error if no API key is provided
+  useEffect(() => {
+    if (!isLoaded) return;
+    initGame();
+  }, [isLoaded]);
+
   if (!apiKey) {
     return (
       <GameMapContainer>
@@ -31,21 +34,6 @@ export const GameMap = () => {
       </GameMapContainer>
     );
   }
-
-  const { isLoaded, error } = useGoogleMaps({
-    apiKey,
-    onLoad: () => {
-      if (!mapInitialized.current) {
-        try {
-          gameRef.current = new Game();
-          gameRef.current.initGame();
-          mapInitialized.current = true;
-        } catch (err) {
-          console.error('Failed to initialize game:', err);
-        }
-      }
-    }
-  });
 
   if (error) {
     return (
@@ -70,7 +58,7 @@ export const GameMap = () => {
         <div className="loading-container">
           <CircularProgress size={60} thickness={4} />
           <Typography variant="h6" color="text.secondary">
-            Loading Google Maps...
+            Loading Game...
           </Typography>
         </div>
       </GameMapContainer>
@@ -83,7 +71,7 @@ export const GameMap = () => {
       
       <Paper elevation={3} className="instructions-container">
         <Typography variant="subtitle2" className="instructions-title">
-          Controls:
+          Controls: {selectedCarIds.length > 0 && `(${selectedCarIds.length} selected)`}
         </Typography>
         <ul className="instructions-list">
           <li className="instructions-item">

@@ -1,39 +1,44 @@
-import { MapManager } from '@/resources/map/mapManager';
-import { CarManager } from '@/resources/car/carManager';
+import { useGameStore } from '@/stores/gameStore';
 import type { Position } from '@/types/common';
 
-export class Game {
-  private mapManager: MapManager;
-  private carManager: CarManager;
+export const initializeMap = (elementId: string): google.maps.Map => {
+  const map = new google.maps.Map(document.getElementById(elementId)!, {
+    zoom: 13,
+    center: { lat: 37.7749, lng: -122.4194 },
+    disableDefaultUI: true,
+    zoomControl: true,
+    draggable: false,
+    gestureHandling: 'none'
+  });
 
-  constructor() {
-    this.mapManager = new MapManager();
-    this.carManager = new CarManager();
-    this.setupEventHandlers();
-  }
+  useGameStore.getState().setMap(map);
+  return map;
+};
 
-  initGame(): void {
-    const map = this.mapManager.initMap('map');
-    this.carManager.createCar({ lat: 37.7749, lng: -122.4194 });
-    this.carManager.createCar({ lat: 37.7849, lng: -122.4094 });
-  }
+export const setupKeyboardEvents = (): void => {
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      useGameStore.getState().setSpacePressed(true);
+      e.preventDefault();
+    }
+  });
 
-  private setupEventHandlers(): void {
-    this.mapManager.setEventHandlers({
-      onRightClick: (position: Position, event: google.maps.MapMouseEvent) => {
-        const selectedCars = this.carManager.getSelectedCars();
-        
-        if (selectedCars.length > 0) {
-          const isShiftPressed = event.domEvent?.shiftKey || false;
-          this.carManager.moveSelectedCars(position, {
-            addToQueue: isShiftPressed
-          });
-        }
-      },
-      
-      onClick: () => {
-        this.carManager.clearSelection();
-      }
-    });
-  }
-}
+  document.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') {
+      useGameStore.getState().setSpacePressed(false);
+    }
+  });
+
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+  });
+};
+
+export const initGame = (): void => {
+  const map = initializeMap('map');
+  setupKeyboardEvents();
+  
+  const { createCar } = useGameStore.getState();
+  createCar({ lat: 37.7749, lng: -122.4194 });
+  createCar({ lat: 37.7849, lng: -122.4094 });
+};
