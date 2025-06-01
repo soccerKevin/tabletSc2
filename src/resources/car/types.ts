@@ -1,5 +1,5 @@
 // File: src/resources/car/types.ts
-import type { Position } from '@/types/common';
+import type { Position } from "@/resources/map/types";
 
 export interface Car {
   id: number;

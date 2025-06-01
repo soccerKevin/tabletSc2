@@ -1,15 +1,15 @@
 // File: src/components/gameMap/component.tsx
-'use client';
+"use client";
 
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
-import { Alert, CircularProgress, Paper, Typography } from '@mui/material';
+import { Alert, CircularProgress, Paper, Typography } from "@mui/material";
 
-import { useGoogleMaps } from '@/resources/map';
-import { initGame } from '@/resources/game';
-import { useGameStore } from '@/resources/game';
+import { useGoogleMaps } from "@/resources/map";
+import { initGame } from "@/resources/game";
+import { useGameStore } from "@/resources/game";
 
-import { GameMapContainer } from '.';
+import { GameMapContainer } from ".";
 
 export const GameMap = () => {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -24,15 +24,27 @@ export const GameMap = () => {
   // Event listeners should be in React components
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
+      if (e.code === "Space") {
         setSpacePressed(true);
         e.preventDefault();
+
+        // Enable map dragging when space is pressed
+        const { map } = useGameStore.getState();
+        if (map) {
+          map.setOptions({ draggable: true, gestureHandling: "cooperative" });
+        }
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
+      if (e.code === "Space") {
         setSpacePressed(false);
+
+        // Disable map dragging when space is released
+        const { map } = useGameStore.getState();
+        if (map) {
+          map.setOptions({ draggable: false, gestureHandling: "none" });
+        }
       }
     };
 
@@ -40,14 +52,14 @@ export const GameMap = () => {
       e.preventDefault();
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
-    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
+    document.addEventListener("contextmenu", handleContextMenu);
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keyup', handleKeyUp);
-      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
+      document.removeEventListener("contextmenu", handleContextMenu);
     };
   }, [setSpacePressed]);
 
@@ -76,9 +88,7 @@ export const GameMap = () => {
             <Typography variant="h6" component="div">
               Error loading Google Maps
             </Typography>
-            <Typography variant="body2">
-              {error}
-            </Typography>
+            <Typography variant="body2">{error}</Typography>
           </Alert>
         </div>
       </GameMapContainer>
@@ -101,21 +111,16 @@ export const GameMap = () => {
   return (
     <GameMapContainer>
       <div id="map" className="game-map" />
-      
+
       <Paper elevation={3} className="instructions-container">
         <Typography variant="subtitle2" className="instructions-title">
-          Controls: {selectedCarIds.length > 0 && `(${selectedCarIds.length} selected)`}
+          Controls:{" "}
+          {selectedCarIds.length > 0 && `(${selectedCarIds.length} selected)`}
         </Typography>
         <ul className="instructions-list">
-          <li className="instructions-item">
-            Hold SPACE + drag to move map
-          </li>
-          <li className="instructions-item">
-            Click to select cars
-          </li>
-          <li className="instructions-item">
-            Drag to select multiple cars
-          </li>
+          <li className="instructions-item">Hold SPACE + drag to move map</li>
+          <li className="instructions-item">Click to select cars</li>
+          <li className="instructions-item">Drag to select multiple cars</li>
           <li className="instructions-item">
             Right-click to move selected cars
           </li>

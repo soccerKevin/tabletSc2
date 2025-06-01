@@ -1,4 +1,4 @@
-import { GameMap } from '@/components/gameMap';
+import { GameMap } from "@/components/gameMap";
 
 export const Home = () => {
   return (
@@ -6,6 +6,6 @@ export const Home = () => {
       <GameMap />
     </main>
   );
-}
+};
 
 export default Home;

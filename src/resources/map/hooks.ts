@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 interface UseGoogleMapsOptions {
   apiKey: string;
@@ -9,13 +9,15 @@ interface UseGoogleMapsReturn {
   error: string | null;
 }
 
-export const useGoogleMaps = ({ apiKey }: UseGoogleMapsOptions): UseGoogleMapsReturn => {
+export const useGoogleMaps = ({
+  apiKey,
+}: UseGoogleMapsOptions): UseGoogleMapsReturn => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!apiKey) {
-      setError('Google Maps API key is required');
+      setError("Google Maps API key is required");
       return;
     }
 
@@ -26,15 +28,19 @@ export const useGoogleMaps = ({ apiKey }: UseGoogleMapsOptions): UseGoogleMapsRe
     }
 
     // Check if script is already loading
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+    const existingScript = document.querySelector(
+      'script[src*="maps.googleapis.com"]',
+    );
     if (existingScript) {
-      existingScript.addEventListener('load', () => setIsLoaded(true));
-      existingScript.addEventListener('error', () => setError('Failed to load Google Maps'));
+      existingScript.addEventListener("load", () => setIsLoaded(true));
+      existingScript.addEventListener("error", () =>
+        setError("Failed to load Google Maps"),
+      );
       return;
     }
 
     // Load Google Maps script
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry`;
     script.async = true;
     script.defer = true;
@@ -44,7 +50,7 @@ export const useGoogleMaps = ({ apiKey }: UseGoogleMapsOptions): UseGoogleMapsRe
     };
 
     script.onerror = () => {
-      setError('Failed to load Google Maps');
+      setError("Failed to load Google Maps");
     };
 
     document.head.appendChild(script);

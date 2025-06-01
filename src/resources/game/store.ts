@@ -1,10 +1,10 @@
-import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+import { create } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
 
-import type { Position } from '@/resources/map/types';
-import type { Car } from '@/resources/car/types';
+import type { Position } from "@/resources/map/types";
+import type { Car } from "@/resources/car/types";
 
-import { useCarStore } from '@/resources/car/store';
+import { useCarStore } from "@/resources/car/store";
 
 interface GameState {
   map: google.maps.Map | null;
@@ -18,7 +18,11 @@ interface GameActions {
   setMap: (map: google.maps.Map) => void;
   createCar: (position: Position) => void;
   selectCar: (carId: number, clearOthers?: boolean) => void;
-  moveCars: (carIds: number[], destination: Position, addToQueue?: boolean) => void;
+  moveCars: (
+    carIds: number[],
+    destination: Position,
+    addToQueue?: boolean,
+  ) => void;
   clearSelection: () => void;
   setSpacePressed: (pressed: boolean) => void;
   createDestinationMarker: (position: Position) => void;
@@ -35,9 +39,9 @@ export const useGameStore = create<GameState & GameActions>()(
 
     setMap: (map) => {
       set({ map });
-      
+
       // Setup map events directly here
-      map.addListener('rightclick', (e: google.maps.MapMouseEvent) => {
+      map.addListener("rightclick", (e: google.maps.MapMouseEvent) => {
         e.stop();
         const { selectedCarIds } = get();
         if (selectedCarIds.length > 0) {
@@ -48,11 +52,12 @@ export const useGameStore = create<GameState & GameActions>()(
       });
 
       // Only clear selection if clicking on empty map area (not on cars)
-      map.addListener('click', (e: google.maps.MapMouseEvent) => {
+      map.addListener("click", (e: google.maps.MapMouseEvent) => {
         // Check if the click target has a marker/element - if so, don't clear selection
         const target = e.domEvent?.target as Element;
-        const isMarkerClick = target?.closest('.gm-style-pbc') || target?.tagName === 'IMG';
-        
+        const isMarkerClick =
+          target?.closest(".gm-style-pbc") || target?.tagName === "IMG";
+
         if (!isMarkerClick) {
           get().clearSelection();
         }
@@ -72,7 +77,7 @@ export const useGameStore = create<GameState & GameActions>()(
         moveQueue: [],
         isMoving: false,
         element: null,
-        speed: 200
+        speed: 200,
       };
 
       const marker = new google.maps.Marker({
@@ -80,14 +85,16 @@ export const useGameStore = create<GameState & GameActions>()(
         map,
         icon: carStore.createCarIcon(false),
         draggable: false,
-        title: `Car ${car.id}`
+        title: `Car ${car.id}`,
       });
 
-      marker.addListener('click', (e: google.maps.MapMouseEvent) => {
+      marker.addListener("click", (e: google.maps.MapMouseEvent) => {
         e.stop(); // Stop event propagation
-        const isCtrlPressed = (e.domEvent as MouseEvent)?.ctrlKey || (e.domEvent as MouseEvent)?.metaKey;
+        const isCtrlPressed =
+          (e.domEvent as MouseEvent)?.ctrlKey ||
+          (e.domEvent as MouseEvent)?.metaKey;
         get().selectCar(car.id, !isCtrlPressed);
-        
+
         // Prevent map click handler from firing
         if (e.domEvent) {
           e.domEvent.stopPropagation();
@@ -102,14 +109,14 @@ export const useGameStore = create<GameState & GameActions>()(
 
     selectCar: (carId, clearOthers = true) => {
       const carStore = useCarStore.getState();
-      const car = carStore.cars.find(c => c.id === carId);
+      const car = carStore.cars.find((c) => c.id === carId);
       if (!car) return;
 
       carStore.selectCar(car, clearOthers);
-      
-      const selectedIds = carStore.selectedCars.map(c => c.id);
+
+      const selectedIds = carStore.selectedCars.map((c) => c.id);
       set({ selectedCarIds: selectedIds });
-      
+
       carStore.updateCarVisuals(carStore.cars, selectedIds);
     },
 
@@ -119,9 +126,9 @@ export const useGameStore = create<GameState & GameActions>()(
       if (!map) return;
 
       get().createDestinationMarker(destination);
-      
-      carIds.forEach(carId => {
-        const car = carStore.cars.find(c => c.id === carId);
+
+      carIds.forEach((carId) => {
+        const car = carStore.cars.find((c) => c.id === carId);
         if (car) {
           get().createMovementLine(car.position, destination);
           if (addToQueue) {
@@ -148,9 +155,9 @@ export const useGameStore = create<GameState & GameActions>()(
     setSpacePressed: (pressed) => {
       const { map } = get();
       if (map) {
-        map.setOptions({ 
-          draggable: pressed, 
-          gestureHandling: pressed ? 'cooperative' : 'none' 
+        map.setOptions({
+          draggable: pressed,
+          gestureHandling: pressed ? "cooperative" : "none",
         });
       }
       set({ isSpacePressed: pressed });
@@ -164,23 +171,29 @@ export const useGameStore = create<GameState & GameActions>()(
         position,
         map,
         icon: {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          url:
+            "data:image/svg+xml;charset=UTF-8," +
+            encodeURIComponent(`
             <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
               <circle cx="10" cy="10" r="8" fill="#ff4444" stroke="#ffffff" stroke-width="2"/>
               <circle cx="10" cy="10" r="3" fill="#ffffff"/>
             </svg>
           `),
           scaledSize: new google.maps.Size(20, 20),
-          anchor: new google.maps.Point(10, 10)
-        }
+          anchor: new google.maps.Point(10, 10),
+        },
       });
 
-      set(state => ({ destinationMarkers: [...state.destinationMarkers, marker] }));
-      
+      set((state) => ({
+        destinationMarkers: [...state.destinationMarkers, marker],
+      }));
+
       setTimeout(() => {
         marker.setMap(null);
-        set(state => ({
-          destinationMarkers: state.destinationMarkers.filter(m => m !== marker)
+        set((state) => ({
+          destinationMarkers: state.destinationMarkers.filter(
+            (m) => m !== marker,
+          ),
         }));
       }, 5000);
     },
@@ -192,20 +205,20 @@ export const useGameStore = create<GameState & GameActions>()(
       const line = new google.maps.Polyline({
         path: [start, end],
         geodesic: true,
-        strokeColor: '#00ff00',
+        strokeColor: "#00ff00",
         strokeOpacity: 0.8,
         strokeWeight: 3,
-        map
+        map,
       });
 
-      set(state => ({ movementLines: [...state.movementLines, line] }));
-      
+      set((state) => ({ movementLines: [...state.movementLines, line] }));
+
       setTimeout(() => {
         line.setMap(null);
-        set(state => ({
-          movementLines: state.movementLines.filter(l => l !== line)
+        set((state) => ({
+          movementLines: state.movementLines.filter((l) => l !== line),
         }));
       }, 3000);
-    }
-  }))
+    },
+  })),
 );

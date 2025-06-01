@@ -1,6 +1,6 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
-import type { MapState } from './types';
+import type { MapState } from "./types";
 
 interface MapStore extends MapState {
   setMap: (map: google.maps.Map | null) => void;
@@ -16,10 +16,10 @@ export const useMapStore = create<MapStore>((set) => ({
   isSelecting: false,
   selectionStart: null,
   selectionBox: null,
-  
+
   setMap: (map) => set({ map }),
   setSpacePressed: (isSpacePressed) => set({ isSpacePressed }),
   setSelecting: (isSelecting) => set({ isSelecting }),
   setSelectionStart: (selectionStart) => set({ selectionStart }),
-  setSelectionBox: (selectionBox) => set({ selectionBox })
+  setSelectionBox: (selectionBox) => set({ selectionBox }),
 }));
