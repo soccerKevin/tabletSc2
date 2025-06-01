@@ -1,5 +1,6 @@
 - always have full access to the codebase
 - always be in agent mode
+- assume "keep" on all changes.  I'm doing this in a branch so I can undo changes if I want to
 - next, mui, react, zustand
 - arrow function syntax
 - use absolute paths, unless referecing this folder, or this component or resource

@@ -236,12 +236,84 @@ export class CarManager {
 
   private handleSelectionBox(rect: DOMRect): void {
     const { cars } = useCarStore.getState();
+    const { map } = useMapStore.getState();
     
+    if (!map) return;
+    
+    // Clear previous selection
+    const store = useCarStore.getState();
+    store.clearSelection();
+    
+    const selectedCars: Car[] = [];
+    const mapDiv = map.getDiv();
+    const mapRect = mapDiv.getBoundingClientRect();
+    
+    // Convert selection rectangle to map-relative coordinates
+    const selectionRect = {
+      left: rect.left - mapRect.left,
+      top: rect.top - mapRect.top,
+      right: rect.left + rect.width - mapRect.left,
+      bottom: rect.top + rect.height - mapRect.top
+    };
+    
+    // Check each car using Google Maps projection
     cars.forEach(car => {
+      if (!car.marker || !car.position) return;
+      
+      // Create a temporary overlay to get projection
+      const overlay = new google.maps.OverlayView();
+      overlay.setMap(map);
+      
+      overlay.onAdd = () => {};
+      overlay.draw = () => {
+        const projection = overlay.getProjection();
+        if (!projection) {
+          overlay.setMap(null);
+          return;
+        }
+        
+        const carLatLng = new google.maps.LatLng(car.position.lat, car.position.lng);
+        const carPixel = projection.fromLatLngToContainerPixel(carLatLng);
+        
+        if (carPixel && 
+            carPixel.x >= selectionRect.left && 
+            carPixel.x <= selectionRect.right &&
+            carPixel.y >= selectionRect.top && 
+            carPixel.y <= selectionRect.bottom) {
+          selectedCars.push(car);
+        }
+        
+        overlay.setMap(null);
+      };
+    });
+    
+    // Apply selections after a short delay to allow overlays to process
+    setTimeout(() => {
+      selectedCars.forEach(selectedCar => {
+        store.selectCar(selectedCar, false);
+      });
+      this.updateCarVisuals();
+    }, 50);
+  }
+  
+  private updateCarVisuals(): void {
+    const store = useCarStore.getState();
+    store.cars.forEach(car => {
       if (car.marker) {
-        this.selectCar(car, false);
+        car.marker.setIcon(this.createCarIcon(car.isSelected));
       }
     });
+  }
+  
+  // Helper method to convert lat/lng to world coordinates
+  private project(latLng: Position): google.maps.Point {
+    let siny = Math.sin(latLng.lat * Math.PI / 180);
+    siny = Math.min(Math.max(siny, -0.9999), 0.9999);
+    
+    return new google.maps.Point(
+      256 * (0.5 + latLng.lng / 360),
+      256 * (0.5 - Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI))
+    );
   }
 
   private handleLongPress(point: { x: number; y: number }): void {

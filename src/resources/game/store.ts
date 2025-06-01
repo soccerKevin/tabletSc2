@@ -47,8 +47,15 @@ export const useGameStore = create<GameState & GameActions>()(
         }
       });
 
-      map.addListener('click', () => {
-        get().clearSelection();
+      // Only clear selection if clicking on empty map area (not on cars)
+      map.addListener('click', (e: google.maps.MapMouseEvent) => {
+        // Check if the click target has a marker/element - if so, don't clear selection
+        const target = e.domEvent?.target as Element;
+        const isMarkerClick = target?.closest('.gm-style-pbc') || target?.tagName === 'IMG';
+        
+        if (!isMarkerClick) {
+          get().clearSelection();
+        }
       });
     },
 
@@ -77,8 +84,15 @@ export const useGameStore = create<GameState & GameActions>()(
       });
 
       marker.addListener('click', (e: google.maps.MapMouseEvent) => {
-        e.stop();
-        get().selectCar(car.id, !(e.domEvent as MouseEvent)?.ctrlKey);
+        e.stop(); // Stop event propagation
+        const isCtrlPressed = (e.domEvent as MouseEvent)?.ctrlKey || (e.domEvent as MouseEvent)?.metaKey;
+        get().selectCar(car.id, !isCtrlPressed);
+        
+        // Prevent map click handler from firing
+        if (e.domEvent) {
+          e.domEvent.stopPropagation();
+          e.domEvent.preventDefault();
+        }
       });
 
       car.marker = marker;
