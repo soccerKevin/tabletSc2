@@ -2,21 +2,54 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Paper, Typography, CircularProgress, Alert } from '@mui/material';
-import { useGoogleMaps } from '@/hooks/useGoogleMaps';
-import { useGameStore } from '@/stores/gameStore';
-import { initGame } from '@/lib/game';
+
+import { Alert, CircularProgress, Paper, Typography } from '@mui/material';
+
+import { useGoogleMaps } from '@/resources/map';
+import { initGame } from '@/resources/game';
+import { useGameStore } from '@/resources/game';
+
 import { GameMapContainer } from '.';
 
 export const GameMap = () => {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const { isLoaded, error } = useGoogleMaps({ apiKey: apiKey! });
-  const { selectedCarIds } = useGameStore();
+  const { selectedCarIds, setSpacePressed } = useGameStore();
 
   useEffect(() => {
     if (!isLoaded) return;
     initGame();
   }, [isLoaded]);
+
+  // Event listeners should be in React components
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setSpacePressed(true);
+        e.preventDefault();
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setSpacePressed(false);
+      }
+    };
+
+    const handleContextMenu = (e: Event) => {
+      e.preventDefault();
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+    document.addEventListener('contextmenu', handleContextMenu);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
+      document.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, [setSpacePressed]);
 
   if (!apiKey) {
     return (

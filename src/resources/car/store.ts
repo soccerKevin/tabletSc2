@@ -1,7 +1,9 @@
 // File: src/resources/car/store.ts
 import { create } from 'zustand';
-import type { Car, CarState } from './types';
+
 import type { Position } from '@/types/common';
+
+import type { Car, CarState } from './types';
 
 interface CarStore extends CarState {
   addCar: (car: Car) => void;
@@ -13,7 +15,21 @@ interface CarStore extends CarState {
   addToMoveQueue: (carId: number, position: Position) => void;
   clearMoveQueue: (carId: number) => void;
   getNextQueuePosition: (carId: number) => Position | null;
+  startCarMovement: (car: Car) => void;
+  createCarIcon: (isSelected: boolean) => google.maps.Icon;
+  updateCarVisuals: (cars: Car[], selectedIds: number[]) => void;
 }
+
+const calculateDistance = (pos1: Position, pos2: Position): number => {
+  const R = 6371;
+  const dLat = (pos2.lat - pos1.lat) * Math.PI / 180;
+  const dLng = (pos2.lng - pos1.lng) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(pos1.lat * Math.PI / 180) * Math.cos(pos2.lat * Math.PI / 180) *
+          Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
 
 export const useCarStore = create<CarStore>((set, get) => ({
   cars: [],
@@ -41,7 +57,6 @@ export const useCarStore = create<CarStore>((set, get) => ({
     updatedCars[carIndex] = updatedCar;
     
     if (clearOthers) {
-      // Clear all other selections - but don't try to manipulate DOM here
       updatedCars.forEach(c => {
         if (c.id !== car.id) {
           c.isSelected = false;
@@ -68,8 +83,6 @@ export const useCarStore = create<CarStore>((set, get) => ({
       ...car,
       isSelected: false
     }));
-    
-    // Don't try to manipulate DOM elements here since we're using Google Maps markers
     
     return {
       cars: updatedCars,
@@ -117,5 +130,76 @@ export const useCarStore = create<CarStore>((set, get) => ({
     }));
     
     return nextPosition;
+  },
+
+  startCarMovement: (car: Car) => {
+    const store = get();
+    const nextPosition = store.getNextQueuePosition(car.id);
+    
+    if (!nextPosition) {
+      store.setCarMoving(car.id, false);
+      return;
+    }
+    
+    store.setCarMoving(car.id, true);
+    
+    const start = car.position;
+    const distance = calculateDistance(start, nextPosition);
+    const duration = Math.max((distance / 200) * 3600000, 500);
+    const startTime = Date.now();
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const lat = start.lat + (nextPosition.lat - start.lat) * progress;
+      const lng = start.lng + (nextPosition.lng - start.lng) * progress;
+      
+      const newPosition = { lat, lng };
+      
+      get().updateCarPosition(car.id, newPosition);
+      
+      if (car.marker) {
+        car.marker.setPosition(newPosition);
+      }
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        get().startCarMovement(car);
+      }
+    };
+    
+    animate();
+  },
+
+  createCarIcon: (isSelected: boolean) => {
+    const size = isSelected ? 45 : 30;
+    const color = isSelected ? '#00ff00' : '#4285f4';
+    const strokeWidth = isSelected ? 4 : 2;
+    const glowEffect = isSelected ? `<circle cx="${(size + 6)/2}" cy="${(size + 6)/2}" r="${size/2 + 3}" fill="none" stroke="#00ff00" stroke-width="2" opacity="0.6"/>` : '';
+    
+    return {
+      url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+        <svg width="${size + 6}" height="${size + 6}" viewBox="0 0 ${size + 6} ${size + 6}" xmlns="http://www.w3.org/2000/svg">
+          ${glowEffect}
+          <circle cx="${(size + 6)/2}" cy="${(size + 6)/2}" r="${size/2 - strokeWidth}" fill="${color}" stroke="#ffffff" stroke-width="${strokeWidth}"/>
+          <text x="${(size + 6)/2}" y="${(size + 6)/2 + 6}" text-anchor="middle" fill="white" font-size="${Math.floor(size * 0.5)}" font-weight="bold">🚗</text>
+        </svg>
+      `),
+      scaledSize: new google.maps.Size(size + 6, size + 6),
+      anchor: new google.maps.Point((size + 6)/2, (size + 6)/2)
+    };
+  },
+
+  updateCarVisuals: (cars: Car[], selectedIds: number[]) => {
+    const { createCarIcon } = get();
+    cars.forEach(car => {
+      const isSelected = selectedIds.includes(car.id);
+      car.isSelected = isSelected;
+      if (car.marker) {
+        car.marker.setIcon(createCarIcon(isSelected));
+      }
+    });
   }
 }));

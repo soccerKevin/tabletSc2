@@ -1,0 +1,46 @@
+- always have full access to the codebase
+- always be in agent mode
+- next, mui, react, zustand
+- arrow function syntax
+- use absolute paths, unless referecing this folder, or this component or resource
+  - ex: inside @/resources/cars
+    - @/resources/checkpoints is good
+    - . or ./types or ./defaults is good
+    - @/resources/cars/types is bad (from cars, good from checkpoints folder)
+    - inside @/resources/cars/tests
+      - . or .. is good
+    - index files should use barrel exports when possible
+    - prefer named imports/exports over default
+    - inside @/resources/car
+      - import { useMapStore } from '../map/store'; this is bad
+- 1 styled component per react component, children use classnames
+- please order import statements
+  - react first
+  - 3rd party libraries
+  - other local modules
+  - this module (ie. "." or "..")
+  - alphabetical after the other rules
+  - one space in between each section
+  - import the sub module if able
+    - (ex:) import { useEffect } from "react" is good
+    - import React from "react"; React.useEffect is bad
+- prettier config
+  - standard
+- eslint config
+  - standard
+- folder structure
+  - src
+    - components
+      - index
+      - component
+      - style
+    - resources
+      - resource (these files if necessary)
+        - index
+        - store
+        - types (types, enums, interfaces)
+        - defaults
+        - hooks
+- files should be less than 150 lines
+- break up components if longer
+- event listeners should be in a react component

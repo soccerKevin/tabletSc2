@@ -1,7 +1,8 @@
-import { useMapStore } from './store';
+import type { Position, SelectionBox } from './types';
+
+import type { MapConfig, MapEventHandlers } from './types';
 import { DEFAULT_MAP_CONFIG, MAP_CONSTANTS } from './defaults';
-import type { MapEventHandlers, MapConfig } from './types';
-import type { Position, SelectionBox } from '@/types/common';
+import { useMapStore } from './store';
 
 export class MapManager {
   private eventHandlers: MapEventHandlers = {};
@@ -53,11 +54,12 @@ export class MapManager {
       if (isSpacePressed) {
         // Enable dragging when space is pressed
         map.setOptions({ draggable: true, gestureHandling: 'cooperative' });
-      } else if (e.domEvent?.button === 0) {
+      } else if (e.domEvent && 'button' in e.domEvent && (e.domEvent as MouseEvent).button === 0) {
         // Left click without space - start selection
-        e.domEvent.preventDefault();
-        e.domEvent.stopPropagation();
-        this.startSelection(e.domEvent);
+        const mouseEvent = e.domEvent as MouseEvent;
+        mouseEvent.preventDefault();
+        mouseEvent.stopPropagation();
+        this.startSelection(mouseEvent);
       }
       
       this.eventHandlers.onMouseDown?.(e);

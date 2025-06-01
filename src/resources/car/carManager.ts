@@ -1,8 +1,9 @@
-import { useCarStore } from './store';
-import { useMapStore } from '../map/store';
-import { DEFAULT_CAR_CONFIG, CAR_CONSTANTS } from './defaults';
+import type { Position } from '@/resources/map/types';
+
 import type { Car, MovementOptions } from './types';
-import type { Position } from '@/types/common';
+import { useCarStore } from './store';
+import { useMapStore } from '@/resources/map/store';
+import { DEFAULT_CAR_CONFIG, CAR_CONSTANTS } from './defaults';
 
 export class CarManager {
   private destinationMarkers: google.maps.Marker[] = [];
@@ -39,14 +40,21 @@ export class CarManager {
       draggable: false
     });
 
-    car.marker.addListener('click', (e: google.maps.MapMouseEvent) => {
-      e.stop();
-      this.selectCar(car, !e.domEvent?.ctrlKey && !e.domEvent?.metaKey);
-    });
+    this.setupCarEvents(car);
 
     car.element = car.marker as any;
     store.addCar(car);
     return car;
+  }
+
+  private setupCarEvents(car: Car): void {
+    if (!car.marker) return;
+    
+    car.marker.addListener('click', (e: google.maps.MapMouseEvent) => {
+      e.stop();
+      const mouseEvent = e.domEvent as MouseEvent;
+      this.selectCar(car, !mouseEvent?.ctrlKey && !mouseEvent?.metaKey);
+    });
   }
 
   private createCarIcon(isSelected: boolean): google.maps.Icon {

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+
 import type { MapState } from './types';
 
 interface MapStore extends MapState {
